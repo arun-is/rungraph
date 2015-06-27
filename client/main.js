@@ -1,3 +1,3 @@
 Meteor.startup(function() {
-  Meteor.call('init');
+  console.log('front end loaded!');
 });

@@ -4,7 +4,7 @@ var userURI = "/user";
 var accessToken;
 var user;
 
-var getUser = function() {
+function getUser() {
   HTTP.get(mainUrl + userURI, {
     headers: {
       Accept: 'application/vnd.com.runkeeper.User+json',
@@ -13,6 +13,8 @@ var getUser = function() {
   },function(error, result) {
     if(result) {
       user = JSON.parse(result.content);
+      console.log(user)
+      getActivities();
     }
     if(error) {
       console.error(result);
@@ -20,7 +22,7 @@ var getUser = function() {
   })
 };
 
-var getActivities = function() {
+function getActivities() {
   HTTP.get(mainUrl + user["fitness_activities"], {
     headers: {
       Accept: 'application/vnd.com.runkeeper.FitnessActivityFeed+json',
@@ -36,12 +38,15 @@ var getActivities = function() {
   })
 }
 
-Meteor.methods({
-  init: function() {
-    if(Meteor.user() && Meteor.user().services && Meteor.user().services.runkeeper) {
-      accessToken = Meteor.user().services.runkeeper.accessToken;
-      getUser();
-      getActivities();
-    }
+init = function(user) {
+  if(user && user.services && user.services.runkeeper) {
+    accessToken = user.services.runkeeper.accessToken;
+    getUser();
   }
+}
+
+Meteor.methods({
+  
 });
+
+
