@@ -4,19 +4,27 @@ var userURI = "/user";
 var userType = "application/vnd.com.runkeeper.User+json";
 
 var fitnessActivitiesURI = "/fitnessActivities";
-var fitnessActivityType = "application/vnd.com.runkeeper.FitnessActivityFeed+json";
+var fitnessActivityFeedType = "application/vnd.com.runkeeper.FitnessActivityFeed+json";
 
-function getUser(accessToken) {
+
+var fitnessActivityType = "application/vnd.com.runkeeper.FitnessActivity+json";
+
+getUser = function(accessToken, callback) {
     _get(accessToken, mainUrl + userURI, userType, function(result) {
-        console.log(result);
-        //getActivities(accessToken);
+        callback(result);
     });
 
 };
 
-function getActivities(accessToken) {
-    _get(accessToken, mainUrl + fitnessActivitiesURI, fitnessActivityType, function(result) {
-        console.log(result)
+getActivities = function(accessToken, callback) {
+    _get(accessToken, mainUrl + fitnessActivitiesURI, fitnessActivityFeedType, function(result) {
+        callback(result);
+    });
+}
+
+getActivityByUri = function(accessToken, uri, callback) {
+    _get(accessToken, mainUrl + uri, fitnessActivityType, function(result) {
+        callback(result);
     });
 }
 
@@ -35,14 +43,3 @@ function _get(accessToken, url, type, callback) {
         }
     });
 }
-
-init = function(user) {
-    if (user && user.services && user.services.runkeeper) {
-        accessToken = user.services.runkeeper.accessToken;
-        getUser(accessToken);
-    }
-}
-
-Meteor.methods({
-
-});
