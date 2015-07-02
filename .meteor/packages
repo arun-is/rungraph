@@ -6,6 +6,7 @@
 
 meteor-platform
 http
-accounts-ui
 selaias:accounts-runkeeper
 mrt:moment
+vsivsi:job-collection
+accounts-ui-unstyled

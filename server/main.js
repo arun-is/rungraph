@@ -2,9 +2,23 @@ Accounts.onLogin(function(user) {
     init(user.user); //strip out everything but actual user object
 })
 
-
 Meteor.startup(function () {
     
+});
+
+Accounts.onCreateUser(function(options, user) {
+  user.profile = options.profile;
+  user.totalActivities = 0;
+  user.savedActivities = 0;
+  return user;
+});
+
+Meteor.publish('userData', function() {
+  if(!this.userId) return null;
+  return Meteor.users.find(this.userId, {fields: {
+    totalActivities: 1,
+    savedActivities: 1
+  }});
 });
 
 function init(user) {
