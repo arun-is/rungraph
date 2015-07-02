@@ -16,8 +16,9 @@ getUser = function(accessToken, callback) {
 
 };
 
-getActivities = function(accessToken, callback) {
-    _get(accessToken, mainUrl + fitnessActivitiesURI, fitnessActivityFeedType, function(result) {
+getActivities = function(accessToken, uri, callback) {
+    var url = mainUrl + (uri ? uri : fitnessActivitiesURI);
+    _get(accessToken, url, fitnessActivityFeedType, function(result) {
         callback(result);
     });
 }

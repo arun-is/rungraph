@@ -13,7 +13,7 @@ Template.progress.helpers({
         if(user && !testNullUndefined(user.savedActivities) && !testNullUndefined(user.totalActivities)) {
             return (user.totalActivities === 0 ? 0 : ((user.savedActivities / user.totalActivities) * 100).toFixed(0)) + '%';
         } else {
-            console.error('what is going on?');
+            console.error("stuff isn't defined yet or something");
             return null;
         }
     }
