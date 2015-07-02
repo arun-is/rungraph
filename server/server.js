@@ -17,7 +17,7 @@ Meteor.startup(function() {
     }, function(job, callback) {
         getPage(job, callback);
     });
-    
+
     jobs.processJobs('getActivity', {
         pollInterval: 100
     }, function(job, callback) {
@@ -94,7 +94,7 @@ function processNewUser(job, callback) {
     var user = Meteor.users.findOne({
         _id: userId
     });
-    
+
     getActivities(accessToken, null, function(result) {
         var savedActivities = getActivityCount(userId);
         Meteor.users.update(user, {
@@ -108,7 +108,7 @@ function processNewUser(job, callback) {
         job.done();
         callback();
     });
-    
+
 }
 
 function getActivityCount(userId) {
@@ -122,32 +122,32 @@ function getPage(job, callback) {
     var userId = job.data.userId;
     var accessToken = getAccessToken(userId);
     getActivities(accessToken, uri, function(result) {
-        for(var i = 0; i < result.items.length; i++) {
+        for (var i = 0; i < result.items.length; i++) {
             var stub = result.items[i];
             createNewGetActivityJob(stub, userId);
         }
-        
-        if(result.next) {
+
+        if (result.next) {
             console.log(result.next);
         }
-        
+
         job.done();
         callback();
     });
 }
 
 function getActivity(job, callback) {
-  var stub = job.data.stub;
-  var userId = job.data.userId;
-  console.log(stub);
-  job.done();
-  callback();
+    var stub = job.data.stub;
+    var userId = job.data.userId;
+    console.log(stub);
+    job.done();
+    callback();
 }
 
 function getAccessToken(userId) {
     var user = Meteor.users.findOne({
         _id: userId
     });
-    
+
     return user.services.runkeeper.accessToken;;
 }
