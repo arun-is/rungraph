@@ -24,7 +24,8 @@ getActivities = function(accessToken, uri, callback) {
 }
 
 getActivityByUri = function(accessToken, uri, callback) {
-    _get(accessToken, mainUrl + uri, fitnessActivityType, function(result) {
+    var url =  mainUrl + uri;
+    _get(accessToken, url, fitnessActivityType, function(result) {
         callback(result);
     });
 }

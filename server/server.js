@@ -72,9 +72,9 @@ function createNewGetPageJob(uri, userId) {
         .save();
 }
 
-function createNewGetActivityJob(stub, userId) {
+function createNewGetActivityJob(uri, userId) {
     var job = new Job(jobs, 'getActivity', {
-        stub: stub,
+        uri: uri,
         userId: userId
     });
 
@@ -90,10 +90,8 @@ function createNewGetActivityJob(stub, userId) {
 
 function processNewUser(job, callback) {
     var userId = job.data.userId;
-    var accessToken = getAccessToken(userId);
-    var user = Meteor.users.findOne({
-        _id: userId
-    });
+    var user = getUser(userId);
+    var accessToken = getAccessToken(user);
 
     getActivities(accessToken, null, function(result) {
         var savedActivities = getActivityCount(userId);
@@ -120,15 +118,16 @@ function getActivityCount(userId) {
 function getPage(job, callback) {
     var uri = job.data.uri;
     var userId = job.data.userId;
-    var accessToken = getAccessToken(userId);
+    var user = getUser(userId);
+    var accessToken = getAccessToken(user);
     getActivities(accessToken, uri, function(result) {
         for (var i = 0; i < result.items.length; i++) {
-            var stub = result.items[i];
-            createNewGetActivityJob(stub, userId);
+            var uri = result.items[i].uri;
+            createNewGetActivityJob(uri, userId);
         }
 
         if (result.next) {
-            console.log(result.next);
+            createNewGetPageJob(result.next, userId);
         }
 
         job.done();
@@ -137,17 +136,32 @@ function getPage(job, callback) {
 }
 
 function getActivity(job, callback) {
-    var stub = job.data.stub;
+    var uri = job.data.uri;
     var userId = job.data.userId;
-    console.log(stub);
-    job.done();
-    callback();
+    var user = getUser(userId);
+    var accessToken = getAccessToken(user);
+    getActivityByUri(accessToken, uri, function(result) {
+        result.userId = userId;
+        if(!Activities.findOne({uri:uri, userId: userId})) {
+            Activities.insert(result);
+            Meteor.users.update(user, {
+                $inc: {
+                    savedActivities: 1
+                }
+            });
+        }
+        job.done();
+        callback();
+    });
+    
 }
 
-function getAccessToken(userId) {
-    var user = Meteor.users.findOne({
+function getUser(userId) {
+    return user = Meteor.users.findOne({
         _id: userId
     });
+}
 
+function getAccessToken(user) {
     return user.services.runkeeper.accessToken;;
 }

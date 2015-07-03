@@ -9,7 +9,6 @@ Deps.autorun(function() {
 Template.progress.helpers({
     percentage: function() {
         var user = Meteor.user();
-        console.log(user);
         if (user && !testNullUndefined(user.savedActivities) && !testNullUndefined(user.totalActivities)) {
             return (user.totalActivities === 0 ? 0 : ((user.savedActivities / user.totalActivities) * 100).toFixed(0)) + '%';
         } else {
