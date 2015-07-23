@@ -1,6 +1,52 @@
 /*Accounts.onLogin(function(user) {
     init(user.user); //strip out everything but actual user object
 });*/
+
+/*                                       
+                                                                 
+Basic Job Flow                                                   
+                                                                 
+                                                                 
+╔═══════════════════════════╗      processNewUser is run when a  
+║processNewUser             ║      new user is created. It mainly
+║---------------------------║      initializes some counters.    
+║total = 0                  ║                                    
+║saved = 0                  ║      future: move to using db table
+║active = 0                 ║      counts instead of maintaining 
+╚═══════════════════════════╝      counters                      
+              │                                                  
+ every       get                                                 
+ hour        first                                               
+   ●         page                                                
+   │          │        get                                       
+   └──────────┼────────next───┐                                  
+              │        page   │                                  
+              ▼               │                                  
+╔═══════════════════════════╗ │    getPage processes a page worth
+║getPage                    ║ │    of information                
+║---------------------------║ │                                  
+║if(total > saved + active) ║ │    for new user, this is called  
+║    page = getPage()       ║ │    repeatedly to download all    
+║                           ║ │    pages worth of activities     
+║    for page.items ●───────╬─┼─┐                                
+║                           ║ │ │                                
+║    if(page.next) ●────────╬─┘ │                                
+║                           ║   │                                
+╚═══════════════════════════╝   │                                
+                                │                                
+              ┌─────────────────┘                                
+              ▼                                                  
+╔═══════════════════════════╗      checks if there is an activity
+║getActivity(uri)           ║      or job for a given uri        
+║---------------------------║                                    
+║if(!activity(uri) &&       ║      if there isn't either, then it
+║!activeJob(uri))           ║      downloads new info and saves  
+║    createJob(uri)         ║      it to the db                  
+║    active++               ║                                    
+╚═══════════════════════════╝                                                            
+  
+*/
+
 var jobs = JobCollection('jobQueue');
 
 Meteor.startup(function() {
@@ -33,7 +79,7 @@ Accounts.onCreateUser(function(options, user) {
     return user;
 });
 
-Meteor.publish('userData', function() {
+Meteor.publish('user', function() {
     if (!this.userId) return null;
     return Meteor.users.find(this.userId, {
         fields: {
@@ -42,6 +88,10 @@ Meteor.publish('userData', function() {
         }
     });
 });
+
+Meteor.publish('activities', function() {
+    return Activities.find();
+})
 
 //New Job Functions
 
@@ -94,11 +144,11 @@ function processNewUser(job, callback) {
     var accessToken = getAccessToken(user);
 
     getActivities(accessToken, null, function(result) {
-        var savedActivities = getActivityCount(userId);
         Meteor.users.update(user, {
             $set: {
                 totalActivities: result.size,
-                savedActivities: savedActivities
+                savedActivities: 0,
+                activeJobs: 0
             }
         });
 
@@ -140,16 +190,19 @@ function getActivity(job, callback) {
     var userId = job.data.userId;
     var user = getUser(userId);
     var accessToken = getAccessToken(user);
+    if(!Activities.findOne({uri:uri, userId: userId})) {
+        
+    }
     getActivityByUri(accessToken, uri, function(result) {
         result.userId = userId;
-        if(!Activities.findOne({uri:uri, userId: userId})) {
+        
             Activities.insert(result);
             Meteor.users.update(user, {
                 $inc: {
                     savedActivities: 1
                 }
             });
-        }
+        
         job.done();
         callback();
     });
@@ -165,3 +218,4 @@ function getUser(userId) {
 function getAccessToken(user) {
     return user.services.runkeeper.accessToken;;
 }
+
