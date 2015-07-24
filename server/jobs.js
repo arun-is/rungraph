@@ -52,7 +52,7 @@ Basic Job Flow
 
 */
 
-var Jobs = JobCollection('jobQueue');
+
 
 Meteor.startup(function() {
     Jobs.startJobServer();
@@ -68,6 +68,12 @@ Meteor.startup(function() {
     }, function(job, callback) {
         processPage(job, callback);
     });
+    
+    Jobs.processJobs('periodicPage', {
+        pollInterval: 100
+    }, function(job, callback) {
+        processPeriodicPage(job, callback);
+    });
 
     Jobs.processJobs('processActivity', {
         pollInterval: 100
@@ -75,11 +81,7 @@ Meteor.startup(function() {
         processActivity(job, callback);
     });
     
-    Jobs.processJobs('periodicPage', {
-        pollInterval: 100
-    }, function(job, callback) {
-        processPage(job, callback);
-    });
+    
     return;
 });
 
@@ -90,13 +92,12 @@ createNewUserJob = function(userId) {
 
     job.priority('high')
         .retry({
-            retries: 5,
             wait: 30 * 1000
         })
         .save();
 }
 
-function createNewPageJob(uri, userId) {
+var createNewPageJob = function(uri, userId) {
     var job = new Job(Jobs, 'processPage', {
         uri: uri,
         userId: userId
@@ -104,7 +105,6 @@ function createNewPageJob(uri, userId) {
 
     job.priority('normal')
         .retry({
-            retries: 5,
             wait: 30 * 1000
         })
         .save();
@@ -115,22 +115,15 @@ createNewPeriodicPageJob = function(userId) {
         userId: userId
     });
     
-    var date = new Date();
-    date.setHours(date.getHours() + 1);
-    
     job.priority('normal')
-        .retry({
-            retries: 5,
-            wait: 30 * 1000
-        })
-        .after(date)
+        .delay(60*30*1000)
         .repeat({
-          schedule: Jobs.later.parse.text('every 30 minutes')
+            wait: 60*30*1000
         })
         .save();
 }
 
-function createNewActivityJob(uri, userId) {
+var createNewActivityJob = function(uri, userId) {
     var job = new Job(Jobs, 'processActivity', {
         uri: uri,
         userId: userId
@@ -138,10 +131,10 @@ function createNewActivityJob(uri, userId) {
 
     job.priority('normal')
         .retry({
-            retries: 5,
             wait: 30 * 1000
         })
         .save();
+        
     Meteor.users.update(user, {
         $inc: {
             activeJobs: 1
@@ -152,6 +145,7 @@ function createNewActivityJob(uri, userId) {
 // workers
 
 function processNewUser(job, callback) {
+    var userId = job.data.userId;
     var user = getUser(job.data.userId);
 
     getPage(user, null, function(result) {
@@ -164,6 +158,9 @@ function processNewUser(job, callback) {
         });
         
         _pageCallback(job, callback, result);
+    }, function() {
+        console.log('page failed. retrying');
+        failJob(job, callback)
     });
 
 }
@@ -177,15 +174,28 @@ function processPage(job, callback) {
     
     //if activites are saved, then do nothing
     //if jobs + saved is higher than total, then something went wrong
-    if(user.totalActivities < inProgress) {
-        console.log('Somehow in progress is greater than total for user: ' + userId);
+    if(user.totalActivities === inProgress) {
+        console.log('page job. nothing to download');
     } else if (user.totalActivities > inProgress) {
         getPage(user, uri, function(result) {
             _pageCallback(job, callback, result);
         });
-        console.log('page job ran. new items found');
+        console.log('page job. new items found');
     } else {
-        console.log('page job ran. nothing new');
+        console.log('page job. inProgress greater than total');
+    }
+}
+
+function processPeriodicPage(job, callback) {
+    console.log('periodic page.');
+    var userId = job.data.userId;
+    completeJob(job, callback)
+    if(findInProgressJobs(userId) > 1) {
+        job.done();
+        callback();
+        return;
+    } else {
+        processPage(job, callback);
     }
 }
 
@@ -197,18 +207,20 @@ function processActivity(job, callback) {
     getActivity(user, uri, function(result) {
         result.userId = userId;
         
-            Activities.insert(result);
-            Meteor.users.update(user, {
-                $inc: {
-                    savedActivities: 1,
-                    activeJobs: -1
-                }
-            });
-    
+        Activities.insert(result);
         console.log('activity processed!');
         
-        job.done();
-        callback();
+        completeJob(job, callback)
+    }, function() {
+        console.log('activity failed. retrying');
+        failJob(job, callback)
+    });
+    
+    Meteor.users.update(user, {
+        $set: {
+            savedActivities: findAllActivites(userId).count(),
+            activeJobs: findInProgressActivityJobs(userId).count()
+        }
     });
     
 }
@@ -220,12 +232,11 @@ function _pageCallback(job, callback, result) {
         
         //don't do anthing if this activity exists
         //or if a job exists for it 
-        var activityExists = Activities.findOne({uri:uri, userId: userId});
-        var jobExists = Jobs.findOne({'data.userId': userId, 'status':{$ne:'completed'}, 'data.uri': uri});
-        if(activityExists || jobExists) {
-            return;
+        var activityExists = findActivityByURI(userId, uri);
+        var jobExists = findJobByURI(userId, uri);
+        if(!activityExists && !jobExists) {
+            createNewActivityJob(uri, userId);
         }
-        createNewActivityJob(uri, userId);
     }
     
     Meteor.users.update(user, {
@@ -237,9 +248,16 @@ function _pageCallback(job, callback, result) {
     if (result.next) {
         createNewPageJob(result.next, userId);
     }
-    
-    console.log('page processed!');
 
+    completeJob(job, callback);
+}
+
+function completeJob(job, callback) {
     job.done();
+    callback();
+}
+
+function failJob(job, callback) {
+    job.fail();
     callback();
 }

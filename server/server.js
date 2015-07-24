@@ -4,7 +4,7 @@ Accounts.onCreateUser(function(options, user) {
     var userId = user._id;
     
     createNewUserJob(userId);
-    createNewPeriodicPageJob(userId)
+    createNewPeriodicPageJob(userId);
     
     return user;
 });
@@ -14,7 +14,8 @@ Meteor.publish('user', function() {
     return Meteor.users.find(this.userId, {
         fields: {
             totalActivities: 1,
-            savedActivities: 1
+            savedActivities: 1,
+            activeJobs: 1
         }
     });
 });
