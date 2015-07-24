@@ -9,23 +9,23 @@ var fitnessActivityFeedType = "application/vnd.com.runkeeper.FitnessActivityFeed
 
 var fitnessActivityType = "application/vnd.com.runkeeper.FitnessActivity+json";
 
-getUser = function(accessToken, callback) {
-    _get(accessToken, mainUrl + userURI, userType, function(result) {
+getUser = function(user,callback) {
+    _get(getAccessToken(user), mainUrl + userURI, userType, function(result) {
         callback(result);
     });
 
 };
 
-getActivities = function(accessToken, uri, callback) {
+getPage = function(user, uri, callback) {
     var url = mainUrl + (uri ? uri : fitnessActivitiesURI);
-    _get(accessToken, url, fitnessActivityFeedType, function(result) {
+    _get(getAccessToken(user), url, fitnessActivityFeedType, function(result) {
         callback(result);
     });
 }
 
-getActivityByUri = function(accessToken, uri, callback) {
+getActivity = function(user, uri, callback) {
     var url =  mainUrl + uri;
-    _get(accessToken, url, fitnessActivityType, function(result) {
+    _get(getAccessToken(user), url, fitnessActivityType, function(result) {
         callback(result);
     });
 }
@@ -44,4 +44,8 @@ function _get(accessToken, url, type, callback) {
             console.error(result);
         }
     });
+}
+
+function getAccessToken(user) {
+    return user.services.runkeeper.accessToken;
 }
