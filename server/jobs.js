@@ -171,19 +171,22 @@ function processPage(job, callback) {
     var user = getUser(userId);
     
     var inProgress = user.savedActivities + user.activeJobs;
-    
-    //if activites are saved, then do nothing
-    //if jobs + saved is higher than total, then something went wrong
-    if(user.totalActivities === inProgress) {
-        console.log('page job. nothing to download');
-    } else if (user.totalActivities > inProgress) {
-        getPage(user, uri, function(result) {
+    getPage(user, uri, function(result) {
+        //if activites are saved, then do nothing
+        //if jobs + saved is higher than total, then something went wrong
+        if(result.size === inProgress) {
+            console.log('page job. nothing to download');
+        } else if (user.totalActivities > inProgress) {
             _pageCallback(job, callback, result);
-        });
-        console.log('page job. new items found');
-    } else {
-        console.log('page job. inProgress greater than total');
-    }
+            console.log('page job. new items found');
+        } else {
+            console.log('page job. inProgress greater than total');
+        }
+    }, function() {
+        console.log('page failed. retrying');
+        failJob(job, callback)
+    });
+    
 }
 
 function processPeriodicPage(job, callback) {
