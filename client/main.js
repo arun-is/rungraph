@@ -1,5 +1,4 @@
-Meteor.startup(function() {
-});
+Meteor.startup(function() {});
 
 Deps.autorun(function() {
     Meteor.subscribe('user');

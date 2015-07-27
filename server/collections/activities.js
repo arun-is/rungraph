@@ -7,9 +7,14 @@ Activities._ensureIndex({
 });
 
 findActivityByURI = function(userId, uri) {
-    return Activities.findOne({uri:uri, userId: userId});
+    return Activities.findOne({
+        uri: uri,
+        userId: userId
+    });
 }
 
 findAllActivites = function(userId) {
-    return Activities.find({'userId': userId});
+    return Activities.find({
+        'userId': userId
+    });
 }

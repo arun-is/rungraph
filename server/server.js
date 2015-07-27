@@ -1,11 +1,11 @@
 Accounts.onCreateUser(function(options, user) {
     user.profile = options.profile;
-    
+
     var userId = user._id;
-    
+
     createNewUserJob(userId);
     createNewPeriodicPageJob(userId);
-    
+
     return user;
 });
 

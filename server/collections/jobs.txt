@@ -1,0 +1,46 @@
+                                                                 
+Basic Job Flow                                                   
+                                                                 
+                                                                 
+╔═══════════════════════════╗      processNewUser is run when a  
+║processNewUser             ║      new user is created. It mainly
+║---------------------------║      initializes some counters.    
+║page = getPage()           ║                                    
+║                           ║      future: move to using db table
+║total = page.size          ║      counts instead of maintaining 
+║saved = 0                  ║      counters                      
+║active = 0                 ║                                    
+║                           ║                                    
+║for page.items ●───────────╬───┐                                
+║                           ║   │                                
+║if(page.next) ●────────────╬─┐ │                                
+╚═══════════════════════════╝ │ │                                
+                              │ │                                
+ every                        │ │                                
+ hour                         │ │                                
+   ●                          │ │                                
+   │                          │ │                                
+   └──────────┬───────────────┤ │                                
+              │               │ │                                
+              ▼               │ │                                
+╔═══════════════════════════╗ │ │  getPage processes a page worth
+║processPage                ║ │ │  of information                
+║---------------------------║ │ │                                
+║if(total > saved + active) ║ │ │  for new user, this is called  
+║    page = getPage()       ║ │ │  repeatedly to download all    
+║                           ║ │ │  pages worth of activities     
+║    for page.items ●───────╬─┼─┤                                
+║                           ║ │ │                                
+║    if(page.next) ●────────╬─┘ │                                
+╚═══════════════════════════╝   │                                
+                                │                                
+              ┌─────────────────┘                                
+              ▼                                                  
+╔═══════════════════════════╗      checks if there is an activity
+║processActivity(uri)       ║      or job for a given uri        
+║---------------------------║                                    
+║if(!activity(uri) &&       ║      if there isn't either, then it
+║!activeJob(uri))           ║      downloads new info and saves  
+║    createJob(uri)         ║      it to the db                  
+║    active++               ║                                    
+╚═══════════════════════════╝                                    

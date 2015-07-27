@@ -9,7 +9,7 @@ var fitnessActivityFeedType = "application/vnd.com.runkeeper.FitnessActivityFeed
 
 var fitnessActivityType = "application/vnd.com.runkeeper.FitnessActivity+json";
 
-getUser = function(user,callback, error) {
+getUser = function(user, callback, error) {
     _get(getAccessToken(user), mainUrl + userURI, userType, function(result) {
         callback(result);
     }, error);
@@ -24,7 +24,7 @@ getPage = function(user, uri, callback, error) {
 }
 
 getActivity = function(user, uri, callback, error) {
-    var url =  mainUrl + uri;
+    var url = mainUrl + uri;
     _get(getAccessToken(user), url, fitnessActivityType, function(result) {
         callback(result);
     }, error);
